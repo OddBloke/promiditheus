@@ -123,7 +123,7 @@ def main():
     players = [
         QueryPlayer(port, "RAM", INSTRUMENTS["contrabass"], MEM_QUERY, channel=0),
         QueryPlayer(port, "CPU", INSTRUMENTS["cello"], CPU_QUERY, channel=1),
-        QueryPlayer(port, "PROCS", INSTRUMENTS["choir_aahs"], PROCS_QUERY, channel=2),
+        QueryPlayer(port, "PROCS", INSTRUMENTS["english_horn"], PROCS_QUERY, channel=2),
     ]
 
     try:
