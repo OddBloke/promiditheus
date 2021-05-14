@@ -53,7 +53,7 @@ def main():
         last_note = note
 
         # Attempt to reduce drift
-        delta = (start + 20) - time.time()
+        delta = (start + 5) - time.time()
         print(delta)
         time.sleep(delta)
 
