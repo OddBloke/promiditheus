@@ -60,21 +60,25 @@ def handle_value(port: mido.ports.BaseOutput, value: float, last_note: int) -> N
 def main():
     port = mido.open_output(MIDI_OUTPUT_NAME)
 
-    last_note = None
-    while True:
-        start = time.time()
-        try:
-            value = get_value()
-        except (IndexError, requests.exceptions.ConnectionError):
-            # Ignore these errors by falling through to the sleep logic
-            pass
-        else:
-            last_note = handle_value(port, value, last_note)
+    try:
+        last_note = None
+        while True:
+            start = time.time()
+            try:
+                value = get_value()
+            except (IndexError, requests.exceptions.ConnectionError):
+                # Ignore these errors by falling through to the sleep logic
+                pass
+            else:
+                last_note = handle_value(port, value, last_note)
 
-        # Attempt to reduce drift
-        delta = (start + 5) - time.time()
-        print(delta)
-        time.sleep(delta)
+            # Attempt to reduce drift
+            delta = (start + 5) - time.time()
+            print(delta)
+            time.sleep(delta)
+    finally:
+        if last_note is not None:
+            port.send(mido.Message("note_off", note=last_note))
 
 
 if __name__ == "__main__":
