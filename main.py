@@ -12,6 +12,10 @@ QUERY = """100 -
   avg(node_memory_MemTotal_bytes{{job="node", instance="{instance}"}})
 * 100
 )"""
+QUERY = """
+(
+  (1 - rate(node_cpu_seconds_total{{job="node", mode="idle", instance="{instance}"}}[30s]))
+)"""
 
 MIDI_OUTPUT_NAME = "FLUID Synth (62185):Synth input port (62185:0) 128:0"
 
@@ -28,7 +32,7 @@ def normalise_value(value: float) -> int:
     """Convert a percentile float to a MIDI note number"""
     lower_bound = 30
     upper_bound = 75
-    return round(lower_bound + (upper_bound - lower_bound) * value / 100)
+    return round(lower_bound + (upper_bound - lower_bound) * value)
 
 
 def main():
