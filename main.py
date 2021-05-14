@@ -7,14 +7,13 @@ from dataclasses import dataclass
 
 
 QUERY_TEMPLATE = "http://<redacted>:9090/api/v1/query?query={query}"
-QUERY = """100 -
+MEM_QUERY = """1 -
 (
   avg(node_memory_MemAvailable_bytes{{job="node", instance="{instance}"}})
 /
   avg(node_memory_MemTotal_bytes{{job="node", instance="{instance}"}})
-* 100
 )"""
-QUERY = """
+CPU_QUERY = """
 (
   (1 - rate(node_cpu_seconds_total{{job="node", mode="idle", instance="{instance}"}}[30s]))
 )"""
@@ -41,15 +40,30 @@ INSTRUMENTS = {
 
 
 class QueryPlayer:
-    def __init__(self, name: str, instrument: Instrument, query: str):
+    def __init__(
+        self,
+        port: mido.ports.BaseOutput,
+        name: str,
+        instrument: Instrument,
+        query: str,
+        *,
+        channel: int = 0
+    ):
+        self._port = port
         self._name = name
         self._instrument = instrument
         self._query = query
+        self._channel = channel
+
+        self._port.send(
+            mido.Message(
+                "program_change",
+                channel=self._channel,
+                program=self._instrument.program_number,
+            )
+        )
 
         self._last_note = None
-
-        logging.info("Opening MIDI output: %s", MIDI_OUTPUT_NAME)
-        self._port = mido.open_output(MIDI_OUTPUT_NAME)
 
     def _get_value(self) -> float:
         json = requests.get(
@@ -66,13 +80,17 @@ class QueryPlayer:
 
         if note != self._last_note:
             self.off()
-            self._port.send(mido.Message("note_on", note=note, velocity=127))
+            self._port.send(
+                mido.Message("note_on", channel=self._channel, note=note, velocity=127)
+            )
         self._last_note = note
         return note
 
     def off(self):
         if self._last_note is not None:
-            self._port.send(mido.Message("note_off", note=self._last_note))
+            self._port.send(
+                mido.Message("note_off", channel=self._channel, note=self._last_note)
+            )
 
     def tick(self):
         self._handle_value(self._get_value())
@@ -83,24 +101,32 @@ def main():
         level=logging.INFO,
         format="%(asctime)s %(levelname)-8s %(message)s",
     )
-    player = QueryPlayer("CPU", INSTRUMENTS["cello"], QUERY)
+    logging.info("Opening MIDI output: %s", MIDI_OUTPUT_NAME)
+    port = mido.open_output(MIDI_OUTPUT_NAME)
+
+    players = [
+        QueryPlayer(port, "RAM", INSTRUMENTS["contrabass"], MEM_QUERY, channel=0),
+        QueryPlayer(port, "CPU", INSTRUMENTS["cello"], CPU_QUERY, channel=1),
+    ]
 
     try:
         while True:
             logging.info("Starting loop...")
             start = time.time()
-            try:
-                player.tick()
-            except (IndexError, requests.exceptions.ConnectionError) as exc:
-                # Ignore these errors by falling through to the sleep logic
-                logging.exception("Ignoring occasional error")
+            for player in players:
+                try:
+                    player.tick()
+                except (IndexError, requests.exceptions.ConnectionError) as exc:
+                    # Ignore these errors by falling through to the sleep logic
+                    logging.exception("Ignoring occasional error")
 
             # Attempt to reduce drift
             delta = (start + 5) - time.time()
             logging.info("Loop complete; sleeping for %ss", delta)
             time.sleep(delta)
     finally:
-        player.off()
+        for player in players:
+            player.off()
 
 
 if __name__ == "__main__":
