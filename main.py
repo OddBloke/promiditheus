@@ -1,3 +1,4 @@
+import logging
 import time
 
 import mido
@@ -41,14 +42,15 @@ def get_value() -> float:
     json = requests.get(
         QUERY_TEMPLATE.format(query=QUERY.format(instance="<redacted>:9100"))
     ).json()
+    logging.info("Prometheus JSON: %s", json)
     timestamp, value = json["data"]["result"][0]["value"]
+    logging.info("Metric value: %s", value)
     return float(value)
 
 
 def handle_value(port: mido.ports.BaseOutput, value: float, last_note: int) -> None:
-    print(value)
     note = INSTRUMENTS["cello"].clamp(value)
-    print(note)
+    logging.info("Note: %s", note)
 
     if note != last_note:
         if last_note is not None:
@@ -58,23 +60,30 @@ def handle_value(port: mido.ports.BaseOutput, value: float, last_note: int) -> N
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)-8s %(message)s',
+    )
+
+    logging.info("Opening MIDI output: %s", MIDI_OUTPUT_NAME)
     port = mido.open_output(MIDI_OUTPUT_NAME)
 
     try:
         last_note = None
         while True:
+            logging.info("Starting loop...")
             start = time.time()
             try:
                 value = get_value()
-            except (IndexError, requests.exceptions.ConnectionError):
+            except (IndexError, requests.exceptions.ConnectionError) as exc:
                 # Ignore these errors by falling through to the sleep logic
-                pass
+                logging.exception("Ignoring occasional error")
             else:
                 last_note = handle_value(port, value, last_note)
 
             # Attempt to reduce drift
             delta = (start + 5) - time.time()
-            print(delta)
+            logging.info("Loop complete; sleeping for %ss", delta)
             time.sleep(delta)
     finally:
         if last_note is not None:
