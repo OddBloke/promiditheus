@@ -63,6 +63,7 @@ class QueryPlayer:
             )
         )
 
+        self._value = None
         self._last_note = None
 
     def _get_value(self) -> float:
@@ -92,8 +93,11 @@ class QueryPlayer:
                 mido.Message("note_off", channel=self._channel, note=self._last_note)
             )
 
+    def prep(self):
+        self._value = self._get_value()
+
     def tick(self):
-        self._handle_value(self._get_value())
+        self._handle_value(self._value)
 
 
 def main():
@@ -115,10 +119,13 @@ def main():
             start = time.time()
             for player in players:
                 try:
-                    player.tick()
+                    player.prep()
                 except (IndexError, requests.exceptions.ConnectionError) as exc:
                     # Ignore these errors by falling through to the sleep logic
                     logging.exception("Ignoring occasional error")
+
+            for player in players:
+                player.tick()
 
             # Attempt to reduce drift
             delta = (start + 5) - time.time()
