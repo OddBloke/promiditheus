@@ -20,6 +20,7 @@ QUERY = """
 
 MIDI_OUTPUT_NAME = "FLUID Synth (62185):Synth input port (62185:0) 128:0"
 
+
 @dataclass
 class Instrument:
     name: str
@@ -29,6 +30,7 @@ class Instrument:
     def clamp(self, value):
         lower_bound, upper_bound = self.midi_range
         return round(lower_bound + (upper_bound - lower_bound) * value)
+
 
 INSTRUMENTS = {
     "cello": Instrument("cello", 42, (36, 81)),
@@ -43,22 +45,31 @@ def get_value() -> float:
     return float(value)
 
 
+def handle_value(port: mido.ports.BaseOutput, value: float, last_note: int) -> None:
+    print(value)
+    note = INSTRUMENTS["cello"].clamp(value)
+    print(note)
+
+    if note != last_note:
+        if last_note is not None:
+            port.send(mido.Message("note_off", note=last_note))
+        port.send(mido.Message("note_on", note=note, velocity=127))
+    return note
+
+
 def main():
     port = mido.open_output(MIDI_OUTPUT_NAME)
 
     last_note = None
     while True:
         start = time.time()
-        value = get_value()
-        print(value)
-        note = INSTRUMENTS["cello"].clamp(value)
-        print(note)
-
-        if note != last_note:
-            if last_note is not None:
-                port.send(mido.Message("note_off", note=last_note))
-            port.send(mido.Message("note_on", note=note, velocity=127))
-        last_note = note
+        try:
+            value = get_value()
+        except (IndexError, requests.exceptions.ConnectionError):
+            # Ignore these errors by falling through to the sleep logic
+            pass
+        else:
+            last_note = handle_value(port, value, last_note)
 
         # Attempt to reduce drift
         delta = (start + 5) - time.time()
