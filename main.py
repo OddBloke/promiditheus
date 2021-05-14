@@ -47,6 +47,7 @@ INSTRUMENTS = {
     # Technical top of range is 74, but that is not bassy at all
     "contrabass": Instrument("contrabass", 43, ("e1", "a2")),
     "choir_aahs": Instrument("choir_aahs", 52, ("c4", "c6")),
+    "english_horn": Instrument("english_horn", 69, ("e3", "a5")),
 }
 
 
