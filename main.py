@@ -22,7 +22,7 @@ MIDI_OUTPUT_NAME = "FLUID Synth (62185):Synth input port (62185:0) 128:0"
 
 def get_value() -> float:
     json = requests.get(
-        QUERY_TEMPLATE.format(query=QUERY.format(instance="ringle:9100"))
+        QUERY_TEMPLATE.format(query=QUERY.format(instance="<redacted>:9100"))
     ).json()
     timestamp, value = json["data"]["result"][0]["value"]
     return float(value)
