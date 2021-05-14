@@ -18,6 +18,11 @@ CPU_QUERY = """
 (
   (1 - rate(node_cpu_seconds_total{{job="node", mode="idle", instance="{instance}"}}[30s]))
 )"""
+PROCS_QUERY = """
+avg_over_time(node_procs_running{{job="node", instance="{instance}"}}[30s])
+/
+max_over_time(node_procs_running{{job="node", instance="{instance}"}}[10m])
+"""
 
 MIDI_OUTPUT_NAME = "FLUID Synth (62185):Synth input port (62185:0) 128:0"
 
@@ -117,6 +122,7 @@ def main():
     players = [
         QueryPlayer(port, "RAM", INSTRUMENTS["contrabass"], MEM_QUERY, channel=0),
         QueryPlayer(port, "CPU", INSTRUMENTS["cello"], CPU_QUERY, channel=1),
+        QueryPlayer(port, "PROCS", INSTRUMENTS["choir_aahs"], PROCS_QUERY, channel=2),
     ]
 
     try:
