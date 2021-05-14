@@ -30,8 +30,8 @@ def get_value() -> float:
 
 def normalise_value(value: float) -> int:
     """Convert a percentile float to a MIDI note number"""
-    lower_bound = 30
-    upper_bound = 75
+    lower_bound = 36
+    upper_bound = 81
     return round(lower_bound + (upper_bound - lower_bound) * value)
 
 
