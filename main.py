@@ -35,6 +35,8 @@ class Instrument:
 
 INSTRUMENTS = {
     "cello": Instrument("cello", 42, (36, 81)),
+    # Technical top of range is 74, but that is not bassy at all
+    "contrabass": Instrument("contrabass", 43, (28, 45)),
 }
 
 
