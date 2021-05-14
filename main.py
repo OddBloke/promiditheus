@@ -4,6 +4,7 @@ import time
 import mido
 import requests
 from dataclasses import dataclass
+from music21 import scale
 
 
 QUERY_TEMPLATE = "http://<redacted>:9090/api/v1/query?query={query}"
@@ -21,21 +22,25 @@ CPU_QUERY = """
 MIDI_OUTPUT_NAME = "FLUID Synth (62185):Synth input port (62185:0) 128:0"
 
 
-@dataclass
+SCALE = scale.MajorScale("c")
+
+
 class Instrument:
-    name: str
-    program_number: int
-    midi_range: (int, int)
+    def __init__(self, name: str, program_number: int, pitch_range: (str, str)):
+        self.name = name
+        self.program_number = program_number
+
+        self.available_values = [pitch.midi for pitch in SCALE.getPitches(*pitch_range)]
 
     def clamp(self, value):
-        lower_bound, upper_bound = self.midi_range
-        return round(lower_bound + (upper_bound - lower_bound) * value)
+        value_idx = round((len(self.available_values) - 1) * value)
+        return self.available_values[value_idx]
 
 
 INSTRUMENTS = {
-    "cello": Instrument("cello", 42, (36, 81)),
+    "cello": Instrument("cello", 42, ("c2", "a5")),
     # Technical top of range is 74, but that is not bassy at all
-    "contrabass": Instrument("contrabass", 43, (28, 45)),
+    "contrabass": Instrument("contrabass", 43, ("e1", "a2")),
 }
 
 

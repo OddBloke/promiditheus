@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 requests = "*"
+music21 = "*"
 
 [dev-packages]
 black = "*"
