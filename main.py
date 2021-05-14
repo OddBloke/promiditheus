@@ -2,6 +2,7 @@ import time
 
 import mido
 import requests
+from dataclasses import dataclass
 
 
 QUERY_TEMPLATE = "http://<redacted>:9090/api/v1/query?query={query}"
@@ -19,6 +20,20 @@ QUERY = """
 
 MIDI_OUTPUT_NAME = "FLUID Synth (62185):Synth input port (62185:0) 128:0"
 
+@dataclass
+class Instrument:
+    name: str
+    program_number: int
+    midi_range: (int, int)
+
+    def clamp(self, value):
+        lower_bound, upper_bound = self.midi_range
+        return round(lower_bound + (upper_bound - lower_bound) * value)
+
+INSTRUMENTS = {
+    "cello": Instrument("cello", 42, (36, 81)),
+}
+
 
 def get_value() -> float:
     json = requests.get(
@@ -26,13 +41,6 @@ def get_value() -> float:
     ).json()
     timestamp, value = json["data"]["result"][0]["value"]
     return float(value)
-
-
-def normalise_value(value: float) -> int:
-    """Convert a percentile float to a MIDI note number"""
-    lower_bound = 36
-    upper_bound = 81
-    return round(lower_bound + (upper_bound - lower_bound) * value)
 
 
 def main():
@@ -43,7 +51,7 @@ def main():
         start = time.time()
         value = get_value()
         print(value)
-        note = normalise_value(value)
+        note = INSTRUMENTS["cello"].clamp(value)
         print(note)
 
         if note != last_note:
