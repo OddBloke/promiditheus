@@ -123,7 +123,7 @@ def main():
         format="%(asctime)s %(levelname)-8s %(message)s",
     )
     logging.info("Opening MIDI output: %s", MIDI_OUTPUT_NAME)
-    port = mido.open_output(MIDI_OUTPUT_NAME)
+    port = mido.open_output(MIDI_OUTPUT_NAME, autoreset=True)
 
     players = [
         QueryPlayer(port, "RAM", INSTRUMENTS["contrabass"], MEM_QUERY, channel=0),
@@ -131,27 +131,23 @@ def main():
         QueryPlayer(port, "PROCS", INSTRUMENTS["english_horn"], PROCS_QUERY, channel=2),
     ]
 
-    try:
-        while True:
-            logging.info("Starting loop...")
-            start = time.time()
-            for player in players:
-                try:
-                    player.prep()
-                except (IndexError, requests.exceptions.ConnectionError) as exc:
-                    # Ignore these errors by falling through to the sleep logic
-                    logging.exception("Ignoring occasional error")
-
-            for player in players:
-                player.tick()
-
-            # Attempt to reduce drift
-            delta = (start + 5) - time.time()
-            logging.info("Loop complete; sleeping for %ss", delta)
-            time.sleep(delta)
-    finally:
+    while True:
+        logging.info("Starting loop...")
+        start = time.time()
         for player in players:
-            player.off()
+            try:
+                player.prep()
+            except (IndexError, requests.exceptions.ConnectionError) as exc:
+                # Ignore these errors by falling through to the sleep logic
+                logging.exception("Ignoring occasional error")
+
+        for player in players:
+            player.tick()
+
+        # Attempt to reduce drift
+        delta = (start + 5) - time.time()
+        logging.info("Loop complete; sleeping for %ss", delta)
+        time.sleep(delta)
 
 
 if __name__ == "__main__":
