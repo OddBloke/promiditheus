@@ -4,6 +4,7 @@ import time
 import mido
 import requests
 from dataclasses import dataclass
+import music21
 from music21 import scale
 
 
@@ -37,7 +38,7 @@ class Instrument:
 
         self.available_pitches = [pitch for pitch in SCALE.getPitches(*pitch_range)]
 
-    def clamp(self, value):
+    def clamp(self, value: float) -> music21.pitch.Pitch:
         idx = round((len(self.available_pitches) - 1) * value)
         return self.available_pitches[idx]
 
