@@ -78,19 +78,20 @@ class QueryPlayer:
 
         self._value = None
         self._last_note = None
+        self._log = logging.getLogger("{}:{}".format(self._name, self._instrument.name))
 
     def _get_value(self) -> float:
         json = requests.get(
             QUERY_TEMPLATE.format(query=self._query.format(instance="<redacted>:9100"))
         ).json()
-        logging.info("Prometheus JSON: %s", json)
+        self._log.debug("Prometheus JSON: %s", json)
         timestamp, value = json["data"]["result"][0]["value"]
-        logging.info("Metric value: %s", value)
+        self._log.info("Metric value: %s", value)
         return float(value)
 
     def _handle_value(self, value: float) -> None:
         note = self._instrument.clamp(value)
-        logging.info("Note: %s (%d)", note, note.midi)
+        self._log.info("Note: %s (%d)", note, note.midi)
 
         if note != self._last_note:
             self.off()
@@ -120,7 +121,7 @@ class QueryPlayer:
 def main():
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s %(levelname)-8s %(message)s",
+        format="%(asctime)s %(levelname)-8s %(name)-20s %(message)s",
     )
     logging.info("Opening MIDI output: %s", MIDI_OUTPUT_NAME)
     port = mido.open_output(MIDI_OUTPUT_NAME, autoreset=True)
