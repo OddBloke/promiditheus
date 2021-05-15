@@ -3,26 +3,32 @@ import time
 
 import mido
 import requests
-from dataclasses import dataclass
 import music21
+import yaml
 from music21 import scale
 
 
 QUERY_TEMPLATE = "http://<redacted>:9090/api/v1/query?query={query}"
-MEM_QUERY = """1 -
-(
-  avg(node_memory_MemAvailable_bytes{{job="node", instance="{instance}"}})
-/
-  avg(node_memory_MemTotal_bytes{{job="node", instance="{instance}"}})
-)"""
-CPU_QUERY = """
-(
-  (1 - rate(node_cpu_seconds_total{{job="node", mode="idle", instance="{instance}"}}[30s]))
-)"""
-PROCS_QUERY = """
-avg_over_time(node_procs_running{{job="node", instance="{instance}"}}[30s])
-/
-max_over_time(node_procs_running{{job="node", instance="{instance}"}}[10m])
+
+CONFIG = """\
+cpu:
+  query: |
+    1 - rate(node_cpu_seconds_total{job="node", mode="idle", instance="$instance"}[30s])
+  instrument: cello
+ram:
+  query: |
+    1 - (
+      avg(node_memory_MemAvailable_bytes{job="node", instance="$instance"})
+      /
+      avg(node_memory_MemTotal_bytes{job="node", instance="$instance"})
+    )
+  instrument: contrabass
+procs:
+  query: |
+    avg_over_time(node_procs_running{job="node", instance="$instance"}[30s])
+    /
+    max_over_time(node_procs_running{job="node", instance="$instance"}[10m])
+  instrument: english_horn
 """
 
 MIDI_OUTPUT_NAME = "FLUID Synth (62185):Synth input port (62185:0) 128:0"
@@ -64,7 +70,7 @@ class QueryPlayer:
     ):
         self._port = port
         self._name = name
-        self._instrument = instrument
+        self._instrument = INSTRUMENTS[instrument]
         self._query = query
         self._channel = channel
 
@@ -82,7 +88,9 @@ class QueryPlayer:
 
     def _get_value(self) -> float:
         json = requests.get(
-            QUERY_TEMPLATE.format(query=self._query.format(instance="<redacted>:9100"))
+            QUERY_TEMPLATE.format(
+                query=self._query.replace("$instance", "<redacted>:9100")
+            )
         ).json()
         self._log.debug("Prometheus JSON: %s", json)
         timestamp, value = json["data"]["result"][0]["value"]
@@ -118,6 +126,14 @@ class QueryPlayer:
         self._handle_value(self._value)
 
 
+def get_players_from_config(port: mido.ports.BaseOutput) -> [QueryPlayer]:
+    loaded = yaml.safe_load(CONFIG)
+    return [
+        QueryPlayer(port, name, channel=channel, **player_config)
+        for channel, (name, player_config) in enumerate(loaded.items())
+    ]
+
+
 def main():
     logging.basicConfig(
         level=logging.INFO,
@@ -126,11 +142,7 @@ def main():
     logging.info("Opening MIDI output: %s", MIDI_OUTPUT_NAME)
     port = mido.open_output(MIDI_OUTPUT_NAME, autoreset=True)
 
-    players = [
-        QueryPlayer(port, "RAM", INSTRUMENTS["contrabass"], MEM_QUERY, channel=0),
-        QueryPlayer(port, "CPU", INSTRUMENTS["cello"], CPU_QUERY, channel=1),
-        QueryPlayer(port, "PROCS", INSTRUMENTS["english_horn"], PROCS_QUERY, channel=2),
-    ]
+    players = get_players_from_config(port)
 
     while True:
         logging.info("Starting loop...")
