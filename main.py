@@ -35,11 +35,11 @@ class Instrument:
         self.name = name
         self.program_number = program_number
 
-        self.available_values = [pitch.midi for pitch in SCALE.getPitches(*pitch_range)]
+        self.available_pitches = [pitch for pitch in SCALE.getPitches(*pitch_range)]
 
     def clamp(self, value):
-        value_idx = round((len(self.available_values) - 1) * value)
-        return self.available_values[value_idx]
+        idx = round((len(self.available_pitches) - 1) * value)
+        return self.available_pitches[idx]
 
 
 INSTRUMENTS = {
@@ -89,12 +89,14 @@ class QueryPlayer:
 
     def _handle_value(self, value: float) -> None:
         note = self._instrument.clamp(value)
-        logging.info("Note: %s", note)
+        logging.info("Note: %s (%d)", note, note.midi)
 
         if note != self._last_note:
             self.off()
             self._port.send(
-                mido.Message("note_on", channel=self._channel, note=note, velocity=127)
+                mido.Message(
+                    "note_on", channel=self._channel, note=note.midi, velocity=127
+                )
             )
         self._last_note = note
         return note
@@ -102,7 +104,9 @@ class QueryPlayer:
     def off(self):
         if self._last_note is not None:
             self._port.send(
-                mido.Message("note_off", channel=self._channel, note=self._last_note)
+                mido.Message(
+                    "note_off", channel=self._channel, note=self._last_note.midi
+                )
             )
 
     def prep(self):
