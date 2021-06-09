@@ -7,6 +7,8 @@ name = "pypi"
 requests = "*"
 music21 = "*"
 pyyaml = "*"
+mido = "*"
+python-rtmidi = "*"
 
 [dev-packages]
 black = "*"
