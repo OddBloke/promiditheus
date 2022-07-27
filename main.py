@@ -54,6 +54,11 @@ class QueryPlayer:
             prometheus_host=prometheus_host, query=query
         )
 
+        self._log.info(
+            "Setting program on channel %s to %s",
+            self._channel,
+            self._instrument.program_number,
+        )
         self._port.send(
             mido.Message(
                 "program_change",
