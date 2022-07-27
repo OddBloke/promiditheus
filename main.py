@@ -76,7 +76,10 @@ class QueryPlayer:
     def _get_note(self) -> float:
         json = requests.get(self._query).json()
         self._log.debug("Prometheus JSON: %s", json)
-        timestamp, value = json["data"]["result"][0]["value"]
+        result = json["data"]["result"]
+        if len(result) > 1:
+            self._log.warning("More than 1 result in Prometheus JSON (%d)", len(result))
+        _timestamp, value = result[0]["value"]
         self._log.info("Metric value: %s", value)
         note = self._instrument.clamp(float(value))
         self._log.info("Note: %s (%d)", note, note.midi)
