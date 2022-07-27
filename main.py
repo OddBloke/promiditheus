@@ -12,15 +12,19 @@ from music21 import scale
 
 QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query?query={query}"
 
-SCALE = scale.MajorScale("c")
-
 
 class Instrument:
-    def __init__(self, name: str, program_number: int, pitch_range: (str, str)):
+    def __init__(
+        self,
+        name: str,
+        program_number: int,
+        pitch_range: (str, str),
+        scale: scale.ConcreteScale,
+    ):
         self.name = name
         self.program_number = program_number
 
-        self.available_pitches = [pitch for pitch in SCALE.getPitches(*pitch_range)]
+        self.available_pitches = [pitch for pitch in scale.getPitches(*pitch_range)]
 
     def clamp(self, value: float) -> music21.pitch.Pitch:
         idx = round((len(self.available_pitches) - 1) * value)
@@ -112,8 +116,11 @@ def get_players_from_config(
 ) -> [QueryPlayer]:
     with open(config_file) as fp:
         loaded = yaml.safe_load(fp)
+    scale_cls = getattr(scale, loaded["scale"]["class"])
+    scale_instance = scale_cls(loaded["scale"]["tonic"])
+    logging.info("Selected scale: %s", scale_instance.name)
     instruments = {
-        name: Instrument(name, **config)
+        name: Instrument(name, scale=scale_instance, **config)
         for name, config in loaded["instruments"].items()
     }
     replacements = [replacement.split("=", 1) for replacement in raw_replacements]
