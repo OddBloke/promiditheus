@@ -111,7 +111,7 @@ def get_players_from_config(
         loaded = yaml.safe_load(fp)
     return [
         QueryPlayer(port, name, channel=channel, **player_config)
-        for channel, (name, player_config) in enumerate(loaded.items())
+        for channel, (name, player_config) in enumerate(loaded["queries"].items())
     ]
 
 
