@@ -1,5 +1,7 @@
+import argparse
 import logging
 import time
+from typing import Optional
 
 import mido
 import requests
@@ -30,8 +32,6 @@ procs:
     max_over_time(node_procs_running{job="node", instance="$instance"}[10m])
   instrument: english_horn
 """
-
-MIDI_OUTPUT_NAME = "FLUID Synth (62185):Synth input port (62185:0) 128:0"
 
 
 SCALE = scale.MajorScale("c")
@@ -134,13 +134,42 @@ def get_players_from_config(port: mido.ports.BaseOutput) -> [QueryPlayer]:
     ]
 
 
+def open_midi_output(midi_output: Optional[str]) -> mido.ports.BasePort:
+    def open_output(name: str, *, virtual: bool):
+        logging.info("Opening MIDI output (virtual=%s): %s", virtual, name)
+        return mido.open_output(name, virtual=virtual, autoreset=True)
+
+    if midi_output is None:
+        # No port specified, create a virtual port for `aconnect` usage
+        return open_output("promiditheus", virtual=True)
+    try:
+        return open_output(midi_output, virtual=False)
+    except OSError:
+        logging.info("Failed to open output; treating as aconnect ID")
+        output_name = None
+        for potential_output_name in mido.get_output_names():
+            if potential_output_name.endswith(midi_output):
+                output_name = potential_output_name
+                break
+        if output_name is not None:
+            return open_output(output_name, virtual=False)
+        raise
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--midi-output")
+    return parser.parse_args()
+
+
 def main():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)-8s %(name)-20s %(message)s",
     )
-    logging.info("Opening MIDI output: %s", MIDI_OUTPUT_NAME)
-    port = mido.open_output(MIDI_OUTPUT_NAME, autoreset=True)
+    args = parse_args()
+
+    port = open_midi_output(args.midi_output)
 
     players = get_players_from_config(port)
 
