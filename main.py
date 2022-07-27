@@ -41,7 +41,9 @@ class QueryPlayer:
         self._port = port
         self._name = name
         self._instrument = instruments[instrument]
-        self._query = query
+        self._query = QUERY_TEMPLATE.format(
+            query=query.replace("$instance", "<redacted>:9100")
+        )
         self._channel = channel
 
         self._port.send(
@@ -57,11 +59,7 @@ class QueryPlayer:
         self._log = logging.getLogger("{}:{}".format(self._name, self._instrument.name))
 
     def _get_value(self) -> float:
-        json = requests.get(
-            QUERY_TEMPLATE.format(
-                query=self._query.replace("$instance", "<redacted>:9100")
-            )
-        ).json()
+        json = requests.get(self._query).json()
         self._log.debug("Prometheus JSON: %s", json)
         timestamp, value = json["data"]["result"][0]["value"]
         self._log.info("Metric value: %s", value)
