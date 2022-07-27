@@ -10,7 +10,7 @@ import yaml
 from music21 import scale
 
 
-QUERY_TEMPLATE = "http://<redacted>:9090/api/v1/query?query={query}"
+QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query?query={query}"
 
 SCALE = scale.MajorScale("c")
 
@@ -33,6 +33,7 @@ class QueryPlayer:
         port: mido.ports.BaseOutput,
         name: str,
         instruments: [Instrument],
+        prometheus_host: str,
         *,
         instrument: str,
         query: str,
@@ -42,7 +43,8 @@ class QueryPlayer:
         self._name = name
         self._instrument = instruments[instrument]
         self._query = QUERY_TEMPLATE.format(
-            query=query.replace("$instance", "<redacted>:9100")
+            prometheus_host=prometheus_host,
+            query=query.replace("$instance", "<redacted>:9100"),
         )
         self._channel = channel
 
@@ -95,7 +97,7 @@ class QueryPlayer:
 
 
 def get_players_from_config(
-    config_file: str, port: mido.ports.BaseOutput
+    config_file: str, port: mido.ports.BaseOutput, prometheus_host: str
 ) -> [QueryPlayer]:
     with open(config_file) as fp:
         loaded = yaml.safe_load(fp)
@@ -104,7 +106,14 @@ def get_players_from_config(
         for name, config in loaded["instruments"].items()
     }
     return [
-        QueryPlayer(port, name, instruments, channel=channel, **player_config)
+        QueryPlayer(
+            port,
+            name,
+            instruments,
+            prometheus_host=prometheus_host,
+            channel=channel,
+            **player_config
+        )
         for channel, (name, player_config) in enumerate(loaded["queries"].items())
     ]
 
@@ -135,6 +144,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--midi-output")
     parser.add_argument("--config-file", default="config.yml")
+    parser.add_argument("prometheus_host", metavar="PROMETHEUS-HOST")
     return parser.parse_args()
 
 
@@ -146,7 +156,7 @@ def main():
 
     port = open_midi_output(args.midi_output)
 
-    players = get_players_from_config(args.config_file, port)
+    players = get_players_from_config(args.config_file, port, args.prometheus_host)
 
     while True:
         logging.info("Starting loop...")
