@@ -11,7 +11,7 @@ instruments:
     pitch_range: ["c4", "c6"]
   electric_guitar_distorted:
     program_number: 31
-    pitch_range: ["e3", "e6"]
+    pitch_range: ["e2", "d6"]
   english_horn:
     program_number: 69
     pitch_range: ["e3", "a5"]
