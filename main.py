@@ -27,28 +27,20 @@ class Instrument:
         return self.available_pitches[idx]
 
 
-INSTRUMENTS = {
-    "cello": Instrument("cello", 42, ("c2", "a5")),
-    # Technical top of range is 74, but that is not bassy at all
-    "contrabass": Instrument("contrabass", 43, ("e1", "a2")),
-    "choir_aahs": Instrument("choir_aahs", 52, ("c4", "c6")),
-    "english_horn": Instrument("english_horn", 69, ("e3", "a5")),
-}
-
-
 class QueryPlayer:
     def __init__(
         self,
         port: mido.ports.BaseOutput,
         name: str,
-        instrument: Instrument,
-        query: str,
+        instruments: [Instrument],
         *,
+        instrument: str,
+        query: str,
         channel: int = 0
     ):
         self._port = port
         self._name = name
-        self._instrument = INSTRUMENTS[instrument]
+        self._instrument = instruments[instrument]
         self._query = query
         self._channel = channel
 
@@ -109,8 +101,12 @@ def get_players_from_config(
 ) -> [QueryPlayer]:
     with open(config_file) as fp:
         loaded = yaml.safe_load(fp)
+    instruments = {
+        name: Instrument(name, **config)
+        for name, config in loaded["instruments"].items()
+    }
     return [
-        QueryPlayer(port, name, channel=channel, **player_config)
+        QueryPlayer(port, name, instruments, channel=channel, **player_config)
         for channel, (name, player_config) in enumerate(loaded["queries"].items())
     ]
 

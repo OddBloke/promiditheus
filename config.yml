@@ -1,3 +1,17 @@
+instruments:
+  cello:
+    program_number: 42
+    pitch_range: ["c2", "a5"]
+  contrabass:
+    program_number: 43
+    # Technical top of range is 74, but that is not bassy at all
+    pitch_range: ["e1", "a2"]
+  choir_aahs:
+    program_number: 52
+    pitch_range: ["c4", "c6"]
+  english_horn:
+    program_number: 69
+    pitch_range: ["e3", "a5"]
 queries:
   cpu:
     query: |
