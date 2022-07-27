@@ -4,4 +4,4 @@ deb-deps:
 		libjack-jackd2-dev
 
 fluidsynth:
-	fluidsynth -a alsa
+	fluidsynth -a alsa /usr/share/sounds/sf2/default-GM.sf2
