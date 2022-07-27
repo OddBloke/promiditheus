@@ -7,7 +7,6 @@ import mido
 import requests
 import music21
 import yaml
-from music21 import scale
 
 
 QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query?query={query}"
@@ -19,7 +18,7 @@ class Instrument:
         name: str,
         program_number: int,
         pitch_range: (str, str),
-        scale: scale.ConcreteScale,
+        scale: music21.scale.ConcreteScale,
     ):
         self.name = name
         self.program_number = program_number
@@ -116,11 +115,11 @@ def get_players_from_config(
 ) -> [QueryPlayer]:
     with open(config_file) as fp:
         loaded = yaml.safe_load(fp)
-    scale_cls = getattr(scale, loaded["scale"]["class"])
-    scale_instance = scale_cls(loaded["scale"]["tonic"])
-    logging.info("Selected scale: %s", scale_instance.name)
+    scale_cls = getattr(music21.scale, loaded["scale"]["class"])
+    scale = scale_cls(loaded["scale"]["tonic"])
+    logging.info("Selected scale: %s", scale.name)
     instruments = {
-        name: Instrument(name, scale=scale_instance, **config)
+        name: Instrument(name, scale=scale, **config)
         for name, config in loaded["instruments"].items()
     }
     replacements = [replacement.split("=", 1) for replacement in raw_replacements]
