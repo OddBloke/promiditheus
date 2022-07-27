@@ -164,8 +164,7 @@ def parse_args():
 
 def main():
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)-8s %(name)-20s %(message)s",
+        level=logging.INFO, format="%(asctime)s %(levelname)-8s %(name)-20s %(message)s"
     )
     args = parse_args()
 
