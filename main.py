@@ -67,20 +67,19 @@ class QueryPlayer:
             )
         )
 
-        self._value = None
+        self._note = None
         self._last_note = None
 
-    def _get_value(self) -> float:
+    def _get_note(self) -> float:
         json = requests.get(self._query).json()
         self._log.debug("Prometheus JSON: %s", json)
         timestamp, value = json["data"]["result"][0]["value"]
         self._log.info("Metric value: %s", value)
-        return float(value)
-
-    def _handle_value(self, value: float) -> None:
-        note = self._instrument.clamp(value)
+        note = self._instrument.clamp(float(value))
         self._log.info("Note: %s (%d)", note, note.midi)
+        return note
 
+    def _handle_note(self, note: music21.pitch.Pitch) -> None:
         if note != self._last_note:
             self.off()
             self._port.send(
@@ -89,7 +88,6 @@ class QueryPlayer:
                 )
             )
         self._last_note = note
-        return note
 
     def off(self):
         if self._last_note is not None:
@@ -100,10 +98,10 @@ class QueryPlayer:
             )
 
     def prep(self):
-        self._value = self._get_value()
+        self._note = self._get_note()
 
     def tick(self):
-        self._handle_value(self._value)
+        self._handle_note(self._note)
 
 
 def get_players_from_config(
