@@ -9,6 +9,9 @@ instruments:
   choir_aahs:
     program_number: 52
     pitch_range: ["c4", "c6"]
+  electric_guitar_distorted:
+    program_number: 31
+    pitch_range: ["e3", "e6"]
   english_horn:
     program_number: 69
     pitch_range: ["e3", "a5"]
