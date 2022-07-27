@@ -38,17 +38,21 @@ class QueryPlayer:
         *,
         instrument: str,
         query: str,
-        channel: int = 0
+        channel: int = 0,
     ):
         self._port = port
         self._name = name
+        self._channel = channel
         self._instrument = instruments[instrument]
+
+        self._log = logging.getLogger("{}:{}".format(self._name, self._instrument.name))
+
         for var, value in replacements:
             query = query.replace(f"${var}", value)
+        self._log.info("Calculated query: %s", query.strip())
         self._query = QUERY_TEMPLATE.format(
             prometheus_host=prometheus_host, query=query
         )
-        self._channel = channel
 
         self._port.send(
             mido.Message(
@@ -60,7 +64,6 @@ class QueryPlayer:
 
         self._value = None
         self._last_note = None
-        self._log = logging.getLogger("{}:{}".format(self._name, self._instrument.name))
 
     def _get_value(self) -> float:
         json = requests.get(self._query).json()
