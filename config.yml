@@ -1,0 +1,18 @@
+cpu:
+  query: |
+    1 - rate(node_cpu_seconds_total{job="node", mode="idle", instance="$instance"}[30s])
+  instrument: cello
+ram:
+  query: |
+    1 - (
+      avg(node_memory_MemAvailable_bytes{job="node", instance="$instance"})
+      /
+      avg(node_memory_MemTotal_bytes{job="node", instance="$instance"})
+    )
+  instrument: contrabass
+procs:
+  query: |
+    avg_over_time(node_procs_running{job="node", instance="$instance"}[30s])
+    /
+    max_over_time(node_procs_running{job="node", instance="$instance"}[10m])
+  instrument: english_horn

@@ -12,28 +12,6 @@ from music21 import scale
 
 QUERY_TEMPLATE = "http://<redacted>:9090/api/v1/query?query={query}"
 
-CONFIG = """\
-cpu:
-  query: |
-    1 - rate(node_cpu_seconds_total{job="node", mode="idle", instance="$instance"}[30s])
-  instrument: cello
-ram:
-  query: |
-    1 - (
-      avg(node_memory_MemAvailable_bytes{job="node", instance="$instance"})
-      /
-      avg(node_memory_MemTotal_bytes{job="node", instance="$instance"})
-    )
-  instrument: contrabass
-procs:
-  query: |
-    avg_over_time(node_procs_running{job="node", instance="$instance"}[30s])
-    /
-    max_over_time(node_procs_running{job="node", instance="$instance"}[10m])
-  instrument: english_horn
-"""
-
-
 SCALE = scale.MajorScale("c")
 
 
@@ -126,8 +104,11 @@ class QueryPlayer:
         self._handle_value(self._value)
 
 
-def get_players_from_config(port: mido.ports.BaseOutput) -> [QueryPlayer]:
-    loaded = yaml.safe_load(CONFIG)
+def get_players_from_config(
+    config_file: str, port: mido.ports.BaseOutput
+) -> [QueryPlayer]:
+    with open(config_file) as fp:
+        loaded = yaml.safe_load(fp)
     return [
         QueryPlayer(port, name, channel=channel, **player_config)
         for channel, (name, player_config) in enumerate(loaded.items())
@@ -159,6 +140,7 @@ def open_midi_output(midi_output: Optional[str]) -> mido.ports.BasePort:
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--midi-output")
+    parser.add_argument("--config-file", default="config.yml")
     return parser.parse_args()
 
 
@@ -170,7 +152,7 @@ def main():
 
     port = open_midi_output(args.midi_output)
 
-    players = get_players_from_config(port)
+    players = get_players_from_config(args.config_file, port)
 
     while True:
         logging.info("Starting loop...")
