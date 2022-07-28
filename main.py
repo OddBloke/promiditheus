@@ -55,7 +55,7 @@ class QueryPlayer:
         self._last_note = None
 
     def _do_query(self, url: str) -> Any:
-        json = requests.get(url).json()
+        json = requests.get(url, verify=False).json()
         self._log.debug("Prometheus JSON: %s", json)
         result = json["data"]["result"]
         if len(result) > 1:
