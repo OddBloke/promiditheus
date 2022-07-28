@@ -150,7 +150,7 @@ class GenerateQueryPlayer(QueryPlayer):
         self, start: int, end: int, *, ticks_per_beat: int
     ) -> mido.MidiTrack:
         query = self._query.strip().replace(
-            "/query_range?", f"/query_range?start={start}&end={end}&step=5&"
+            "/query_range?", f"/query_range?start={start}&end={end}&step=1&"
         )
         result = self._do_query(query)
 
