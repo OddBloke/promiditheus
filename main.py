@@ -70,8 +70,8 @@ class QueryPlayer:
             )
         )
 
-        self._note = None
         self._last_note = None
+        self._next_messages = []
 
     def _get_note(self) -> float:
         json = requests.get(self._query).json()
@@ -85,33 +85,37 @@ class QueryPlayer:
         self._log.info("Note: %s (%d)", note, note.midi)
         return note
 
-    def _handle_note(self, note: music21.pitch.Pitch) -> None:
+    def _get_messages(self, note: music21.pitch.Pitch) -> [mido.Message]:
         if note != self._last_note:
-            self.off()
-            self._port.send(
+            return self._off_message() + [
                 mido.Message(
                     "note_on", channel=self._channel, note=note.midi, velocity=127
                 )
-            )
-        self._last_note = note
+            ]
+        return []
 
-    def _off_message(self) -> Optional[mido.Message]:
+    def _off_message(self) -> [mido.Message]:
         if self._last_note is not None:
-            return mido.Message(
-                "note_off", channel=self._channel, note=self._last_note.midi
-            )
-        return None
+            return [
+                mido.Message(
+                    "note_off", channel=self._channel, note=self._last_note.midi
+                )
+            ]
+        return []
 
     def off(self):
-        msg = self._off_message()
-        if msg is not None:
+        for msg in self._off_message():
             self._port.send(msg)
 
     def prep(self):
-        self._note = self._get_note()
+        note = self._get_note()
+        self._next_messages = self._get_messages(note)
+        self._last_note = note
 
     def tick(self):
-        self._handle_note(self._note)
+        for msg in self._next_messages:
+            self._port.send(msg)
+        self._next_messages = []
 
 
 def get_players_from_config(
