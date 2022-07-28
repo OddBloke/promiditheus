@@ -3,6 +3,7 @@ import logging
 import time
 from typing import Any, Optional
 
+import confuse
 import mido
 import requests
 import music21
@@ -176,23 +177,20 @@ class GenerateQueryPlayer(QueryPlayer):
 
 
 def get_players_from_config(
-    config_file: str,
-    port: Optional[mido.ports.BaseOutput],
-    prometheus_host: str,
-    raw_replacements: [str],
+    config: confuse.Configuration, port: Optional[mido.ports.BaseOutput]
 ) -> [QueryPlayer]:
-    with open(config_file) as fp:
-        loaded = yaml.safe_load(fp)
-    scale_cls = getattr(music21.scale, loaded["scale"]["class"])
-    scale = scale_cls(loaded["scale"]["tonic"])
+    scale_cls = getattr(music21.scale, config["scale"]["class"].get())
+    scale = scale_cls(config["scale"]["tonic"].get())
     logging.info("Selected scale: %s", scale.name)
     instruments = {
         name: Instrument(name, scale=scale, **config)
-        for name, config in loaded["instruments"].items()
+        for name, config in config["instruments"].get().items()
     }
-    replacements = [replacement.split("=", 1) for replacement in raw_replacements]
+    replacements = [
+        replacement.split("=", 1) for replacement in config["cli"]["replacement"].get()
+    ]
     players = []
-    for channel, (name, player_config) in enumerate(loaded["queries"].items()):
+    for channel, (name, player_config) in enumerate(config["queries"].get().items()):
         if port is not None:
             args = (port, name, instruments)
             cls = LiveQueryPlayer
@@ -202,7 +200,7 @@ def get_players_from_config(
         players.append(
             cls(
                 *args,
-                prometheus_host=prometheus_host,
+                prometheus_host=config["cli"]["prometheus_host"].get(),
                 replacements=replacements,
                 channel=channel,
                 **player_config,
@@ -233,6 +231,13 @@ def open_midi_output(midi_output: Optional[str]) -> mido.ports.BasePort:
         raise
 
 
+def instantiate_config(args: argparse.Namespace) -> confuse.Configuration:
+    config = confuse.Configuration("promiditheus", __name__)
+    config.set_file(args.config_file)
+    config["cli"].set_args(args)
+    return config
+
+
 def parse_live_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--midi-output")
@@ -247,12 +252,11 @@ def live_main():
         level=logging.INFO, format="%(asctime)s %(levelname)-8s %(name)-20s %(message)s"
     )
     args = parse_live_args()
+    config = instantiate_config(args)
 
-    port = open_midi_output(args.midi_output)
+    port = open_midi_output(config["cli"]["midi_output"].get())
 
-    players = get_players_from_config(
-        args.config_file, port, args.prometheus_host, args.replacement
-    )
+    players = get_players_from_config(config, port)
 
     while True:
         logging.info("Starting loop...")
@@ -291,10 +295,9 @@ def generate_main():
         level=logging.INFO, format="%(asctime)s %(levelname)-8s %(name)-20s %(message)s"
     )
     args = parse_generate_args()
+    config = instantiate_config(args)
 
-    players = get_players_from_config(
-        args.config_file, None, args.prometheus_host, args.replacement
-    )
+    players = get_players_from_config(config, None)
     midifile = mido.MidiFile()
     for player in players:
         midifile.tracks.append(
