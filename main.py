@@ -147,10 +147,10 @@ class GenerateQueryPlayer(QueryPlayer):
     QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query_range?query={query}"
 
     def generate_track_for_range(
-        self, start: int, end: int, *, factor: int, ticks_per_beat: int
+        self, start: int, end: int, step: int, *, factor: int, ticks_per_beat: int
     ) -> mido.MidiTrack:
         query = self._query.strip().replace(
-            "/query_range?", f"/query_range?start={start}&end={end}&step=1&"
+            "/query_range?", f"/query_range?start={start}&end={end}&step={step}&"
         )
         result = self._do_query(query)
 
@@ -280,6 +280,7 @@ def parse_generate_args():
     parser.add_argument("--start", type=int, required=True)
     parser.add_argument("--end", type=int, required=True)
     parser.add_argument("--speed-up-factor", type=int, default=1)
+    parser.add_argument("--prometheus-step", type=int, default=1)
     parser.add_argument("prometheus_host", metavar="PROMETHEUS-HOST")
     parser.add_argument("output_file", metavar="OUTPUT-FILE")
     return parser.parse_args()
@@ -300,6 +301,7 @@ def generate_main():
             player.generate_track_for_range(
                 args.start,
                 args.end,
+                args.prometheus_step,
                 factor=args.speed_up_factor,
                 ticks_per_beat=midifile.ticks_per_beat,
             )
