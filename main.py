@@ -95,13 +95,17 @@ class QueryPlayer:
             )
         self._last_note = note
 
-    def off(self):
+    def _off_message(self) -> Optional[mido.Message]:
         if self._last_note is not None:
-            self._port.send(
-                mido.Message(
-                    "note_off", channel=self._channel, note=self._last_note.midi
-                )
+            return mido.Message(
+                "note_off", channel=self._channel, note=self._last_note.midi
             )
+        return None
+
+    def off(self):
+        msg = self._off_message()
+        if msg is not None:
+            self._port.send(msg)
 
     def prep(self):
         self._note = self._get_note()
