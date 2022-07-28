@@ -1,15 +1,12 @@
 import argparse
 import logging
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import mido
 import requests
 import music21
 import yaml
-
-
-QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query?query={query}"
 
 
 class Instrument:
@@ -51,32 +48,59 @@ class QueryPlayer:
         for var, value in replacements:
             query = query.replace(f"${var}", value)
         self._log.info("Calculated query: %s", query.strip())
-        self._query = QUERY_TEMPLATE.format(
+        self._query = self.QUERY_TEMPLATE.format(
             prometheus_host=prometheus_host, query=query
         )
 
         self._last_note = None
 
-    def _get_messages(self, note: music21.pitch.Pitch) -> [mido.Message]:
+    def _do_query(self, url: str) -> Any:
+        json = requests.get(url).json()
+        self._log.debug("Prometheus JSON: %s", json)
+        result = json["data"]["result"]
+        if len(result) > 1:
+            self._log.warning("More than 1 result in Prometheus JSON (%d)", len(result))
+        return result
+
+    def _get_note_for_value(self, value: float) -> music21.pitch.Pitch:
+        self._log.info("Metric value: %s", value)
+        note = self._instrument.clamp(float(value))
+        self._log.info("Note: %s (%d)", note, note.midi)
+        return note
+
+    def _get_messages(
+        self, note: music21.pitch.Pitch, *, msg_time: int = 0
+    ) -> [mido.Message]:
+        msgs = []
         if note != self._last_note:
-            return self._off_message() + [
+            msgs = self._off_message(msg_time=msg_time) + [
                 mido.Message(
-                    "note_on", channel=self._channel, note=note.midi, velocity=127
+                    "note_on",
+                    channel=self._channel,
+                    note=note.midi,
+                    velocity=127,
+                    time=msg_time,
                 )
             ]
-        return []
+        self._last_note = note
+        return msgs
 
-    def _off_message(self) -> [mido.Message]:
+    def _off_message(self, *, msg_time: int = 0) -> [mido.Message]:
         if self._last_note is not None:
             return [
                 mido.Message(
-                    "note_off", channel=self._channel, note=self._last_note.midi
+                    "note_off",
+                    channel=self._channel,
+                    note=self._last_note.midi,
+                    time=msg_time,
                 )
             ]
         return []
 
 
 class LiveQueryPlayer(QueryPlayer):
+    QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query?query={query}"
+
     def __init__(self, port: mido.ports.BaseOutput, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -97,16 +121,9 @@ class LiveQueryPlayer(QueryPlayer):
         self._next_messages = []
 
     def _get_note(self) -> float:
-        json = requests.get(self._query).json()
-        self._log.debug("Prometheus JSON: %s", json)
-        result = json["data"]["result"]
-        if len(result) > 1:
-            self._log.warning("More than 1 result in Prometheus JSON (%d)", len(result))
+        result = self._do_query(self._query)
         _timestamp, value = result[0]["value"]
-        self._log.info("Metric value: %s", value)
-        note = self._instrument.clamp(float(value))
-        self._log.info("Note: %s (%d)", note, note.midi)
-        return note
+        return self._get_note_for_value(value)
 
     def off(self):
         for msg in self._off_message():
@@ -115,7 +132,6 @@ class LiveQueryPlayer(QueryPlayer):
     def prep(self):
         note = self._get_note()
         self._next_messages = self._get_messages(note)
-        self._last_note = note
 
     def tick(self):
         for msg in self._next_messages:
@@ -124,7 +140,22 @@ class LiveQueryPlayer(QueryPlayer):
 
 
 class GenerateQueryPlayer(QueryPlayer):
-    pass
+    QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query_range?query={query}"
+
+    def generate_track_for_range(self, start: int, end: int) -> mido.MidiTrack:
+        query = self._query.strip().replace(
+            "/query_range?", f"/query_range?start={start}&end={end}&step=5&"
+        )
+        result = self._do_query(query)
+
+        track = mido.MidiTrack()
+
+        for timestamp, value in result[0]["values"]:
+            offset = timestamp - start
+            note = self._get_note_for_value(value)
+            track.extend(self._get_messages(note, msg_time=offset * 3))
+
+        return track
 
 
 def get_players_from_config(
@@ -223,6 +254,33 @@ def live_main():
         delta = (start + 5) - time.time()
         logging.info("Loop complete; sleeping for %ss", delta)
         time.sleep(delta)
+
+
+def parse_generate_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config-file", default="config.yml")
+    parser.add_argument("--replacement", action="append", default=[])
+    parser.add_argument("--start", type=int, required=True)
+    parser.add_argument("--end", type=int, required=True)
+    parser.add_argument("prometheus_host", metavar="PROMETHEUS-HOST")
+    parser.add_argument("output_file", metavar="OUTPUT-FILE")
+    return parser.parse_args()
+
+
+def generate_main():
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)-8s %(name)-20s %(message)s"
+    )
+    args = parse_generate_args()
+
+    players = get_players_from_config(
+        args.config_file, None, args.prometheus_host, args.replacement
+    )
+    midifile = mido.MidiFile()
+    for player in players:
+        midifile.tracks.append(player.generate_track_for_range(args.start, args.end))
+    midifile.save(args.output_file)
+    logging.info("MIDI file length: %s", midifile.length)
 
 
 if __name__ == "__main__":
