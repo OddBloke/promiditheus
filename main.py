@@ -162,7 +162,7 @@ def open_midi_output(midi_output: Optional[str]) -> mido.ports.BasePort:
         raise
 
 
-def parse_args():
+def parse_live_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--midi-output")
     parser.add_argument("--config-file", default="config.yml")
@@ -171,11 +171,11 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
+def live_main():
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)-8s %(name)-20s %(message)s"
     )
-    args = parse_args()
+    args = parse_live_args()
 
     port = open_midi_output(args.midi_output)
 
@@ -203,4 +203,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    live_main()
