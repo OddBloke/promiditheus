@@ -73,18 +73,6 @@ class QueryPlayer:
         self._last_note = None
         self._next_messages = []
 
-    def _get_note(self) -> float:
-        json = requests.get(self._query).json()
-        self._log.debug("Prometheus JSON: %s", json)
-        result = json["data"]["result"]
-        if len(result) > 1:
-            self._log.warning("More than 1 result in Prometheus JSON (%d)", len(result))
-        _timestamp, value = result[0]["value"]
-        self._log.info("Metric value: %s", value)
-        note = self._instrument.clamp(float(value))
-        self._log.info("Note: %s (%d)", note, note.midi)
-        return note
-
     def _get_messages(self, note: music21.pitch.Pitch) -> [mido.Message]:
         if note != self._last_note:
             return self._off_message() + [
@@ -102,6 +90,21 @@ class QueryPlayer:
                 )
             ]
         return []
+
+
+class LiveQueryPlayer(QueryPlayer):
+
+    def _get_note(self) -> float:
+        json = requests.get(self._query).json()
+        self._log.debug("Prometheus JSON: %s", json)
+        result = json["data"]["result"]
+        if len(result) > 1:
+            self._log.warning("More than 1 result in Prometheus JSON (%d)", len(result))
+        _timestamp, value = result[0]["value"]
+        self._log.info("Metric value: %s", value)
+        note = self._instrument.clamp(float(value))
+        self._log.info("Note: %s (%d)", note, note.midi)
+        return note
 
     def off(self):
         for msg in self._off_message():
@@ -135,7 +138,7 @@ def get_players_from_config(
     }
     replacements = [replacement.split("=", 1) for replacement in raw_replacements]
     return [
-        QueryPlayer(
+        LiveQueryPlayer(
             port,
             name,
             instruments,
