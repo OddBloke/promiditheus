@@ -97,6 +97,13 @@ class QueryPlayer:
             ]
         return []
 
+    def _program_change_message(self) -> mido.Message:
+        return mido.Message(
+            "program_change",
+            channel=self._channel,
+            program=self._instrument.program_number,
+        )
+
 
 class LiveQueryPlayer(QueryPlayer):
     QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query?query={query}"
@@ -111,13 +118,7 @@ class LiveQueryPlayer(QueryPlayer):
             self._channel,
             self._instrument.program_number,
         )
-        self._port.send(
-            mido.Message(
-                "program_change",
-                channel=self._channel,
-                program=self._instrument.program_number,
-            )
-        )
+        self._port.send(self._program_change_message())
         self._next_messages = []
 
     def _get_note(self) -> float:
