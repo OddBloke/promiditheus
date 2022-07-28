@@ -28,22 +28,32 @@ class Instrument:
         idx = round((len(self.available_pitches) - 1) * value)
         return self.available_pitches[idx]
 
+    @classmethod
+    def from_config(
+        cls,
+        config: confuse.Configuration,
+        instrument_name: str,
+        scale: music21.scale.Scale,
+    ) -> "Instrument":
+        return cls(
+            instrument_name, scale=scale, **config["instruments"][instrument_name].get()
+        )
+
 
 class QueryPlayer:
     def __init__(
         self,
         name: str,
-        instruments: [Instrument],
         prometheus_host: str,
         replacements: [(str, str)],
         *,
-        instrument: str,
+        instrument: Instrument,
         query: str,
         channel: int = 0,
     ):
         self._name = name
         self._channel = channel
-        self._instrument = instruments[instrument]
+        self._instrument = instrument
 
         self._log = logging.getLogger("{}:{}".format(self._name, self._instrument.name))
 
@@ -183,21 +193,20 @@ def get_players_from_config(
     scale_cls = getattr(music21.scale, config["scale"]["class"].get())
     scale = scale_cls(config["scale"]["tonic"].get())
     logging.info("Selected scale: %s", scale.name)
-    instruments = {
-        name: Instrument(name, scale=scale, **config)
-        for name, config in config["instruments"].get().items()
-    }
     replacements = [
         replacement.split("=", 1) for replacement in config["cli"]["replacement"].get()
     ]
     players = []
     for channel, (name, player_config) in enumerate(config["queries"].get().items()):
         if port is not None:
-            args = (port, name, instruments)
+            args = (port, name)
             cls = LiveQueryPlayer
         else:
-            args = (name, instruments)
+            args = (name,)
             cls = GenerateQueryPlayer
+        player_config["instrument"] = Instrument.from_config(
+            config, player_config["instrument"], scale
+        )
         players.append(
             cls(
                 *args,
