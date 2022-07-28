@@ -147,7 +147,7 @@ class GenerateQueryPlayer(QueryPlayer):
     QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query_range?query={query}"
 
     def generate_track_for_range(
-        self, start: int, end: int, *, ticks_per_beat: int
+        self, start: int, end: int, *, factor: int, ticks_per_beat: int
     ) -> mido.MidiTrack:
         query = self._query.strip().replace(
             "/query_range?", f"/query_range?start={start}&end={end}&step=1&"
@@ -155,19 +155,23 @@ class GenerateQueryPlayer(QueryPlayer):
         result = self._do_query(query)
 
         track = mido.MidiTrack()
+        track.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(120)))
         track.append(self._program_change_message())
+
+        def scale_delta(delta: int) -> int:
+            return int((delta / factor) * ticks_per_beat)
 
         last_timestamp = start
         for timestamp, value in result[0]["values"]:
             delta = timestamp - last_timestamp
             note = self._get_note_for_value(value)
-            msgs = self._get_messages(note, msg_time=delta * ticks_per_beat)
+            msgs = self._get_messages(note, msg_time=scale_delta(delta))
             if msgs:
                 track.extend(msgs)
                 last_timestamp = timestamp
 
         end_delta = end - last_timestamp
-        track.extend(self._off_message(msg_time=end_delta * ticks_per_beat))
+        track.extend(self._off_message(msg_time=scale_delta(end_delta)))
         return track
 
 
@@ -275,6 +279,7 @@ def parse_generate_args():
     parser.add_argument("--replacement", action="append", default=[])
     parser.add_argument("--start", type=int, required=True)
     parser.add_argument("--end", type=int, required=True)
+    parser.add_argument("--speed-up-factor", type=int, default=1)
     parser.add_argument("prometheus_host", metavar="PROMETHEUS-HOST")
     parser.add_argument("output_file", metavar="OUTPUT-FILE")
     return parser.parse_args()
@@ -293,7 +298,10 @@ def generate_main():
     for player in players:
         midifile.tracks.append(
             player.generate_track_for_range(
-                args.start, args.end, ticks_per_beat=midifile.ticks_per_beat
+                args.start,
+                args.end,
+                factor=args.speed_up_factor,
+                ticks_per_beat=midifile.ticks_per_beat,
             )
         )
     midifile.save(args.output_file)
