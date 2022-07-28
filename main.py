@@ -73,13 +73,16 @@ class QueryPlayer:
     ) -> [mido.Message]:
         msgs = []
         if note != self._last_note:
-            msgs = self._off_message(msg_time=msg_time) + [
+            off_msg = self._off_message(msg_time=msg_time)
+            # delta from last message: 0 if we're sending an off, else msg_time
+            on_msg_time = 0 if off_msg else msg_time
+            msgs = off_msg + [
                 mido.Message(
                     "note_on",
                     channel=self._channel,
                     note=note.midi,
                     velocity=127,
-                    time=msg_time,
+                    time=on_msg_time,
                 )
             ]
         self._last_note = note
@@ -143,19 +146,28 @@ class LiveQueryPlayer(QueryPlayer):
 class GenerateQueryPlayer(QueryPlayer):
     QUERY_TEMPLATE = "http://{prometheus_host}/api/v1/query_range?query={query}"
 
-    def generate_track_for_range(self, start: int, end: int) -> mido.MidiTrack:
+    def generate_track_for_range(
+        self, start: int, end: int, *, ticks_per_beat: int
+    ) -> mido.MidiTrack:
         query = self._query.strip().replace(
             "/query_range?", f"/query_range?start={start}&end={end}&step=5&"
         )
         result = self._do_query(query)
 
         track = mido.MidiTrack()
+        track.append(self._program_change_message())
 
+        last_timestamp = start
         for timestamp, value in result[0]["values"]:
-            offset = timestamp - start
+            delta = timestamp - last_timestamp
             note = self._get_note_for_value(value)
-            track.extend(self._get_messages(note, msg_time=offset * 3))
+            msgs = self._get_messages(note, msg_time=delta * ticks_per_beat)
+            if msgs:
+                track.extend(msgs)
+                last_timestamp = timestamp
 
+        end_delta = end - last_timestamp
+        track.extend(self._off_message(msg_time=end_delta * ticks_per_beat))
         return track
 
 
@@ -279,9 +291,13 @@ def generate_main():
     )
     midifile = mido.MidiFile()
     for player in players:
-        midifile.tracks.append(player.generate_track_for_range(args.start, args.end))
+        midifile.tracks.append(
+            player.generate_track_for_range(
+                args.start, args.end, ticks_per_beat=midifile.ticks_per_beat
+            )
+        )
     midifile.save(args.output_file)
-    logging.info("MIDI file length: %s", midifile.length)
+    logging.info("MIDI file length: %ss", midifile.length)
 
 
 if __name__ == "__main__":
