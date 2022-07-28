@@ -123,9 +123,13 @@ class LiveQueryPlayer(QueryPlayer):
         self._next_messages = []
 
 
+class GenerateQueryPlayer(QueryPlayer):
+    pass
+
+
 def get_players_from_config(
     config_file: str,
-    port: mido.ports.BaseOutput,
+    port: Optional[mido.ports.BaseOutput],
     prometheus_host: str,
     raw_replacements: [str],
 ) -> [QueryPlayer]:
@@ -139,18 +143,24 @@ def get_players_from_config(
         for name, config in loaded["instruments"].items()
     }
     replacements = [replacement.split("=", 1) for replacement in raw_replacements]
-    return [
-        LiveQueryPlayer(
-            port,
-            name,
-            instruments,
-            prometheus_host=prometheus_host,
-            replacements=replacements,
-            channel=channel,
-            **player_config,
+    players = []
+    for channel, (name, player_config) in enumerate(loaded["queries"].items()):
+        if port is not None:
+            args = (port, name, instruments)
+            cls = LiveQueryPlayer
+        else:
+            args = (name, instruments)
+            cls = GenerateQueryPlayer
+        players.append(
+            cls(
+                *args,
+                prometheus_host=prometheus_host,
+                replacements=replacements,
+                channel=channel,
+                **player_config,
+            )
         )
-        for channel, (name, player_config) in enumerate(loaded["queries"].items())
-    ]
+    return players
 
 
 def open_midi_output(midi_output: Optional[str]) -> mido.ports.BasePort:
