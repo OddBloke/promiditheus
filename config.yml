@@ -13,7 +13,7 @@ instruments:
     program_number: 35
     pitch_range: ["e1", "d#4"]
   electric_guitar_distorted:
-    program_number: 31
+    program_number: 30
     pitch_range: ["e2", "d6"]
   english_horn:
     program_number: 69
