@@ -7,4 +7,4 @@ fluidsynth:
 	fluidsynth -a alsa /usr/share/sounds/sf2/default-GM.sf2
 
 fmt:
-	black main.py
+	black src/
