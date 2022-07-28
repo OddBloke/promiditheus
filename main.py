@@ -33,7 +33,6 @@ class Instrument:
 class QueryPlayer:
     def __init__(
         self,
-        port: mido.ports.BaseOutput,
         name: str,
         instruments: [Instrument],
         prometheus_host: str,
@@ -43,7 +42,6 @@ class QueryPlayer:
         query: str,
         channel: int = 0,
     ):
-        self._port = port
         self._name = name
         self._channel = channel
         self._instrument = instruments[instrument]
@@ -57,21 +55,7 @@ class QueryPlayer:
             prometheus_host=prometheus_host, query=query
         )
 
-        self._log.info(
-            "Setting program on channel %s to %s",
-            self._channel,
-            self._instrument.program_number,
-        )
-        self._port.send(
-            mido.Message(
-                "program_change",
-                channel=self._channel,
-                program=self._instrument.program_number,
-            )
-        )
-
         self._last_note = None
-        self._next_messages = []
 
     def _get_messages(self, note: music21.pitch.Pitch) -> [mido.Message]:
         if note != self._last_note:
@@ -93,6 +77,24 @@ class QueryPlayer:
 
 
 class LiveQueryPlayer(QueryPlayer):
+    def __init__(self, port: mido.ports.BaseOutput, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self._port = port
+
+        self._log.info(
+            "Setting program on channel %s to %s",
+            self._channel,
+            self._instrument.program_number,
+        )
+        self._port.send(
+            mido.Message(
+                "program_change",
+                channel=self._channel,
+                program=self._instrument.program_number,
+            )
+        )
+        self._next_messages = []
 
     def _get_note(self) -> float:
         json = requests.get(self._query).json()
