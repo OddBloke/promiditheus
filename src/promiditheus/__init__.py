@@ -1,6 +1,7 @@
 import argparse
 import logging
 import time
+from importlib import resources
 from typing import Any, Optional
 
 import confuse
@@ -233,8 +234,17 @@ def open_midi_output(midi_output: Optional[str]) -> mido.ports.BasePort:
 
 def instantiate_config(args: argparse.Namespace) -> confuse.Configuration:
     config = confuse.Configuration("promiditheus", __name__)
+
+    # Import builtin configuration
+    with resources.path("promiditheus", "instruments.yml") as config_path:
+        config.set_file(config_path)
+
+    # Import specified config file
     config.set_file(args.config_file)
+
+    # Import CLI arguments into cli namespace
     config["cli"].set_args(args)
+
     return config
 
 
