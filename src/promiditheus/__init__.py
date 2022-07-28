@@ -1,6 +1,7 @@
 import argparse
 import logging
 import time
+from functools import partial
 from importlib import resources
 from typing import Any, Optional
 
@@ -199,17 +200,14 @@ def get_players_from_config(
     players = []
     for channel, (name, player_config) in enumerate(config["queries"].get().items()):
         if port is not None:
-            args = (port, name)
-            cls = LiveQueryPlayer
+            partial_cls = partial(LiveQueryPlayer, port, name)
         else:
-            args = (name,)
-            cls = GenerateQueryPlayer
+            partial_cls = partial(GenerateQueryPlayer, name)
         player_config["instrument"] = Instrument.from_config(
             config, player_config["instrument"], scale
         )
         players.append(
-            cls(
-                *args,
+            partial_cls(
                 prometheus_host=config["cli"]["prometheus_host"].get(),
                 replacements=replacements,
                 channel=channel,
