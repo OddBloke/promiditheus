@@ -245,8 +245,9 @@ def instantiate_config(args: argparse.Namespace) -> confuse.Configuration:
     config = confuse.Configuration("promiditheus", __name__)
 
     # Import builtin configuration
-    with resources.path("promiditheus", "instruments.yml") as config_path:
-        config.set_file(config_path)
+    for fname in ["instruments.yml", "scale.yml"]:
+        with resources.path("promiditheus", fname) as config_path:
+            config.set_file(config_path)
 
     # Import specified config file
     config.set_file(args.config_file)

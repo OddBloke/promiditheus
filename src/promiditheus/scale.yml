@@ -1,0 +1,5 @@
+scale:
+  # One of the scale classes in music21.scale:
+  # https://web.mit.edu/music21/doc/moduleReference/moduleScale.html
+  class: MajorScale
+  tonic: c

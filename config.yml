@@ -17,8 +17,3 @@ queries:
       /
       max_over_time(node_procs_running{job="node", instance="$instance"}[10m])
     instrument: english_horn
-scale:
-  # One of the scale classes in music21.scale:
-  # https://web.mit.edu/music21/doc/moduleReference/moduleScale.html
-  class: MajorScale
-  tonic: c
