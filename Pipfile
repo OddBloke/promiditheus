@@ -4,11 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
-music21 = "*"
-pyyaml = "*"
-mido = "*"
-python-rtmidi = "*"
+promiditheus = {editable = true, path = "."}
 
 [dev-packages]
 black = "*"
