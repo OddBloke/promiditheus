@@ -196,6 +196,10 @@ You can play that generated file using FluidSynth:
 fluidsynth -a alsa output.mid
 ```
 
+## Examples
+
+See [./examples/](./examples/) for some examples of how Promiditheus can be used.
+
 ## Credits
 
 Thanks to my employer, DigitalOcean, for letting me spend hack-week time on this ultimately
