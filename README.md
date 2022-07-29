@@ -5,6 +5,36 @@ Promiditheus is a tool to generate MIDI from Prometheus data.  It consists of tw
 * `promiditheus` fetches live Prometheus data and emits corresponding MIDI in a loop
 * `promiditheus-generate` generates a MIDI file for Prometheus data in a given range
 
+## Quickstart (using ALSA)
+
+(This presupposes you have a Prometheus instance running which is actively scraping node_exporter
+data for a host: you will need the Prometheus hostname and the target host instance name.)
+
+* Run a fluidsynth instance: `fluidsynth -a alsa /usr/share/sounds/sf2/default-GM.sf2`, find its
+  ALSA midi port using `aconnect -l` (it's often "128:0")
+* Write this config file to `lead-sheet.yml`:
+
+```yml
+queries:
+  cpu:
+    query: |
+      1 - avg(rate(node_cpu_seconds_total{mode="idle", instance="$instance"}[30s]))
+    instrument: cello
+```
+
+* Run:
+
+```sh
+promiditheus \
+    --replacement instance=<scraped instance name> \
+    --midi-output <fluidsynth port> \
+    lead-sheet.yml \
+    <prometheus-host>
+```
+
+This should result in Promiditheus running and Fluidsynth playing a cello corresponding to the CPU
+usage which `<prometheus-host>` is scraping from `<scraped instance name>`.
+
 ## Configuration
 
 ### Lead Sheets
