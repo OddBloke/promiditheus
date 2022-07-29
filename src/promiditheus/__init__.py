@@ -340,13 +340,45 @@ def live_main():
 def parse_generate_args():
     parser = argparse.ArgumentParser()
     CommonArgs.replacement(parser)
-    parser.add_argument("--start", type=int, required=True)
-    parser.add_argument("--end", type=int, required=True)
-    parser.add_argument("--speed-up-factor", type=int, default=1)
-    parser.add_argument("--prometheus-step", type=int, default=1)
+    parser.add_argument(
+        "--start",
+        type=int,
+        required=True,
+        help="The start of the generation range, as a UNIX timestamp.",
+    )
+    parser.add_argument(
+        "--end",
+        type=int,
+        required=True,
+        help="The end of the generation range, as a UNIX timestamp.",
+    )
+    parser.add_argument(
+        "--speed-up-factor",
+        type=int,
+        default=1,
+        help=(
+            "The factor by which MIDI events should be sped up relative to real-time:"
+            " defaults to 1 (i.e. a 60s range will generate a 60s MIDI file)."
+        ),
+    )
+    parser.add_argument(
+        "--prometheus-step",
+        type=int,
+        default=1,
+        help=(
+            "The value passed to Prometheus as the step parameter of queries.  Use this"
+            " to reduce the frequency of MIDI events (particularly useful with high"
+            " speed-up factors), or if your queries are requesting too many datapoints."
+            "  Defaults to 1."
+        ),
+    )
     CommonArgs.lead_sheet(parser)
     CommonArgs.prometheus_host(parser)
-    parser.add_argument("output_file", metavar="OUTPUT-FILE")
+    parser.add_argument(
+        "output_file",
+        metavar="OUTPUT-FILE",
+        help="The path to write the output MIDI file to.",
+    )
     return parser.parse_args()
 
 
