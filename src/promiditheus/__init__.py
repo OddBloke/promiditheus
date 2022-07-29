@@ -247,8 +247,8 @@ def instantiate_config(args: argparse.Namespace) -> confuse.Configuration:
         with resources.path("promiditheus", fname) as config_path:
             config.set_file(config_path)
 
-    # Import specified config file
-    config.set_file(args.config_file)
+    # Import specified lead sheet
+    config.set_file(args.lead_sheet)
 
     # Import CLI arguments into cli namespace
     config["cli"].set_args(args)
@@ -267,7 +267,6 @@ def parse_live_args():
             " MIDI ports using `aconnect`."
         ),
     )
-    parser.add_argument("--config-file", default="config.yml")
     parser.add_argument(
         "--replacement",
         action="append",
@@ -278,6 +277,7 @@ def parse_live_args():
             " be passed multiple times."
         ),
     )
+    parser.add_argument("lead_sheet", metavar="LEAD-SHEET")
     parser.add_argument(
         "prometheus_host",
         metavar="PROMETHEUS-HOST",
@@ -318,12 +318,12 @@ def live_main():
 
 def parse_generate_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config-file", default="config.yml")
     parser.add_argument("--replacement", action="append", default=[])
     parser.add_argument("--start", type=int, required=True)
     parser.add_argument("--end", type=int, required=True)
     parser.add_argument("--speed-up-factor", type=int, default=1)
     parser.add_argument("--prometheus-step", type=int, default=1)
+    parser.add_argument("lead_sheet", metavar="LEAD-SHEET")
     parser.add_argument("prometheus_host", metavar="PROMETHEUS-HOST")
     parser.add_argument("output_file", metavar="OUTPUT-FILE")
     return parser.parse_args()
