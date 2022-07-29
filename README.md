@@ -5,6 +5,10 @@ Promiditheus is a tool to generate MIDI from Prometheus data.  It consists of tw
 * `promiditheus` fetches live Prometheus data and emits corresponding MIDI in a loop
 * `promiditheus-generate` generates a MIDI file for Prometheus data in a given range
 
+## Installation
+
+This repository is pip-installable: `pip install /path/to/promiditheus`.
+
 ## Quickstart (using ALSA)
 
 (This presupposes you have a Prometheus instance running which is actively scraping node_exporter
