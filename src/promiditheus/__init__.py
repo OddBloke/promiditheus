@@ -336,7 +336,7 @@ def live_main():
     args = parse_live_args()
     config = instantiate_config(args)
 
-    port = open_midi_output(config["cli"]["midi_output"].get())
+    port = open_midi_output(config["cli"]["midi_output"].get(None))
 
     players = get_players_from_config(config, port)
 
