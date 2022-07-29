@@ -25,7 +25,7 @@ promiditheus-generate \
     --speed-up-factor 10 \
     node-exporter-lead-sheet.yml \
     <prometheus-host> \
-    output.mid
+    node-exporter.mid
 ```
 
 This uses the default range of 3mins, resulting in an 18s output file due to the speed-up factor of
