@@ -283,9 +283,9 @@ def parse_live_args():
         "--midi-output",
         help=(
             "The MIDI output to connect to: this should be in the format "
-            "'<client>:<port>', as emitted by `aconnect --list`.  If not given, a"
+            "'<client>:<port>' (e.g. as emitted by `aconnect --list`).  If not given, a"
             " virtual MIDI port will be published, which can then be connected to other"
-            " MIDI ports using `aconnect`."
+            " MIDI ports using, e.g., `aconnect`."
         ),
     )
     parser.add_argument(
