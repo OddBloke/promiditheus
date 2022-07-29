@@ -1,0 +1,22 @@
+queries:
+  # Temperature: remove bottom 15 degrees as irrelevant, assume ceiling of 30C
+  bedroom_temp:
+    query: |
+      (dht_temperature_celsius{instance="192.168.1.23:9099"} - 15) / (30 - 15)
+    instrument: viola
+  basement_temp:
+    query: |
+      (dht_temperature_celsius{instance="192.168.1.22:9099"} - 15) / (30 - 15)
+    instrument: cello
+  # Humidity: values are 0-100: remove bottom 15% as irrelevant, assume ceiling of 50%
+  bedroom_humidity:
+    query: |
+      (dht_humidity{instance="192.168.1.23:9099"} - 15) / (50 - 15)
+    instrument: violin
+  basement_humidity:
+    query: |
+      (dht_humidity{instance="192.168.1.22:9099"} - 15) / (50 - 15)
+    instrument: violin
+scale:
+  class: MinorScale
+  tonic: c#
