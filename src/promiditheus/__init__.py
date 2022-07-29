@@ -256,6 +256,16 @@ def instantiate_config(args: argparse.Namespace) -> confuse.Configuration:
     return config
 
 
+class CommonArgs:
+    @staticmethod
+    def prometheus_host(parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "prometheus_host",
+            metavar="PROMETHEUS-HOST",
+            help="The Prometheus host to query.",
+        )
+
+
 def parse_live_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -278,11 +288,7 @@ def parse_live_args():
         ),
     )
     parser.add_argument("lead_sheet", metavar="LEAD-SHEET")
-    parser.add_argument(
-        "prometheus_host",
-        metavar="PROMETHEUS-HOST",
-        help="The Prometheus host to query.",
-    )
+    CommonArgs.prometheus_host(parser)
     return parser.parse_args()
 
 
@@ -324,7 +330,7 @@ def parse_generate_args():
     parser.add_argument("--speed-up-factor", type=int, default=1)
     parser.add_argument("--prometheus-step", type=int, default=1)
     parser.add_argument("lead_sheet", metavar="LEAD-SHEET")
-    parser.add_argument("prometheus_host", metavar="PROMETHEUS-HOST")
+    CommonArgs.prometheus_host(parser)
     parser.add_argument("output_file", metavar="OUTPUT-FILE")
     return parser.parse_args()
 
