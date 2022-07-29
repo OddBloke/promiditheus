@@ -258,6 +258,17 @@ def instantiate_config(args: argparse.Namespace) -> confuse.Configuration:
 
 class CommonArgs:
     @staticmethod
+    def lead_sheet(parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "lead_sheet",
+            metavar="LEAD-SHEET",
+            help=(
+                "A YAML file specifying the queries to play, the instruments to use,"
+                " and the scale to play in."
+            ),
+        )
+
+    @staticmethod
     def prometheus_host(parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "prometheus_host",
@@ -287,7 +298,7 @@ def parse_live_args():
             " be passed multiple times."
         ),
     )
-    parser.add_argument("lead_sheet", metavar="LEAD-SHEET")
+    CommonArgs.lead_sheet(parser)
     CommonArgs.prometheus_host(parser)
     return parser.parse_args()
 
@@ -329,7 +340,7 @@ def parse_generate_args():
     parser.add_argument("--end", type=int, required=True)
     parser.add_argument("--speed-up-factor", type=int, default=1)
     parser.add_argument("--prometheus-step", type=int, default=1)
-    parser.add_argument("lead_sheet", metavar="LEAD-SHEET")
+    CommonArgs.lead_sheet(parser)
     CommonArgs.prometheus_host(parser)
     parser.add_argument("output_file", metavar="OUTPUT-FILE")
     return parser.parse_args()
