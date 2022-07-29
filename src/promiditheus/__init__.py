@@ -339,18 +339,27 @@ def live_main():
 
 def parse_generate_args():
     parser = argparse.ArgumentParser()
+
+    def parse_range(value: str) -> (int, int):
+        range_parts = value.split(":")
+        if len(range_parts) != 2:
+            parser.error(
+                "Invalid range specified; must be <start timestamp>:<end timestamp>"
+            )
+        try:
+            return (int(range_parts[0]), int(range_parts[1]))
+        except ValueError as exc:
+            parser.error(f"Invalid range specified: {exc}")
+
     CommonArgs.replacement(parser)
     parser.add_argument(
-        "--start",
-        type=int,
+        "--range",
+        type=parse_range,
         required=True,
-        help="The start of the generation range, as a UNIX timestamp.",
-    )
-    parser.add_argument(
-        "--end",
-        type=int,
-        required=True,
-        help="The end of the generation range, as a UNIX timestamp.",
+        help=(
+            "The range to generate MIDI output for, specified as two colon-separated"
+            " UNIX timestamps (e.g. '1659101350:1659101410')."
+        ),
     )
     parser.add_argument(
         "--speed-up-factor",
@@ -379,7 +388,9 @@ def parse_generate_args():
         metavar="OUTPUT-FILE",
         help="The path to write the output MIDI file to.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.start, args.end = args.range
+    return args
 
 
 def generate_main():
