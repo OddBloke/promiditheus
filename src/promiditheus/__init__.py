@@ -1,5 +1,6 @@
 import argparse
 import logging
+import shutil
 import textwrap
 import time
 from datetime import datetime
@@ -12,6 +13,10 @@ import mido
 import requests
 import music21
 import yaml
+
+
+WIDTH = min(100, shutil.get_terminal_size().columns - 2)
+FORMATTER_CLASS = partial(argparse.RawDescriptionHelpFormatter, width=WIDTH)
 
 
 class Instrument:
@@ -293,14 +298,21 @@ class CommonArgs:
 
 
 def parse_live_args():
-    description = textwrap.dedent(
-        """\
+    description = "\n".join(
+        textwrap.wrap(
+            textwrap.dedent(
+                """\
         Connect to PROMETHEUS-HOST and use the queries and instruments in
         LEAD-SHEET to emit corresponding MIDI events to MIDI-OUTPUT (or a
         virtual MIDI port if no output is specified) in real-time.
         """
+            ),
+            WIDTH,
+        )
     )
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(
+        description=description, formatter_class=FORMATTER_CLASS
+    )
     parser.add_argument(
         "--midi-output",
         help=(
@@ -349,7 +361,7 @@ def live_main():
 
 def parse_generate_args():
     description_parts = [
-        textwrap.dedent(part).replace("\n", " ")
+        "\n".join(textwrap.wrap(textwrap.dedent(part).replace("\n", " "), WIDTH))
         for part in [
             """\
         Connect to PROMETHEUS-HOST and use the queries and instruments in
@@ -374,7 +386,7 @@ def parse_generate_args():
     ]
     description = "\n\n".join(description_parts)
     parser = argparse.ArgumentParser(
-        description=description, formatter_class=argparse.RawDescriptionHelpFormatter
+        description=description, formatter_class=FORMATTER_CLASS
     )
 
     def parse_range(value: str) -> (int, int):
