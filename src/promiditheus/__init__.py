@@ -284,7 +284,7 @@ def live_main():
                 player.prep()
             except (IndexError, requests.exceptions.ConnectionError) as exc:
                 # Ignore these errors by falling through to the sleep logic
-                logging.exception("Ignoring occasional error")
+                player._log.exception("Ignoring occasional error")
 
         for player in players:
             player.tick()
