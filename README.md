@@ -7,7 +7,7 @@ Promiditheus is a tool to generate MIDI from Prometheus data.  It consists of tw
 
 ## Installation
 
-This repository is pip-installable: `pip install /path/to/promiditheus`.
+This repository is pip-installable: `pip install git+https://github.com/OddBloke/promiditheus`
 
 ## Quickstart (using ALSA)
 
