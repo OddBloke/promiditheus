@@ -1,5 +1,6 @@
 import argparse
 import logging
+import textwrap
 import time
 from datetime import datetime
 from functools import partial
@@ -292,7 +293,14 @@ class CommonArgs:
 
 
 def parse_live_args():
-    parser = argparse.ArgumentParser()
+    description = textwrap.dedent(
+        """\
+        Connect to PROMETHEUS-HOST and use the queries and instruments in
+        LEAD-SHEET to emit corresponding MIDI events to MIDI-OUTPUT (or a
+        virtual MIDI port if no output is specified) in real-time.
+        """
+    )
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
         "--midi-output",
         help=(
@@ -301,6 +309,7 @@ def parse_live_args():
             " virtual MIDI port will be published, which can then be connected to other"
             " MIDI ports using, e.g., `aconnect`."
         ),
+        metavar="MIDI-OUTPUT",
     )
     CommonArgs.replacement(parser)
     CommonArgs.lead_sheet(parser)
