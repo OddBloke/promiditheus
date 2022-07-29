@@ -1,6 +1,7 @@
 import argparse
 import logging
 import time
+from datetime import datetime
 from functools import partial
 from importlib import resources
 from typing import Any, Optional
@@ -351,14 +352,17 @@ def parse_generate_args():
         except ValueError as exc:
             parser.error(f"Invalid range specified: {exc}")
 
+    now = int(datetime.now().timestamp())
+
     CommonArgs.replacement(parser)
     parser.add_argument(
         "--range",
+        default=(now - 180, now),
         type=parse_range,
-        required=True,
         help=(
             "The range to generate MIDI output for, specified as two colon-separated"
-            " UNIX timestamps (e.g. '1659101350:1659101410')."
+            " UNIX timestamps (e.g. '1659101350:1659101410'). Defaults to the last 3"
+            " minutes."
         ),
     )
     parser.add_argument(
