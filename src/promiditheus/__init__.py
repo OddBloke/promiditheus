@@ -348,7 +348,34 @@ def live_main():
 
 
 def parse_generate_args():
-    parser = argparse.ArgumentParser()
+    description_parts = [
+        textwrap.dedent(part).replace("\n", " ")
+        for part in [
+            """\
+        Connect to PROMETHEUS-HOST and use the queries and instruments in
+        LEAD-SHEET to write a multi-track MIDI file to OUTPUT-FILE for the
+        range of time specified by RANGE.""",
+            """\
+        By default, this will generate a MIDI file of the same length as the
+        given RANGE: specifying `--speed-up-factor` will reduce the length of
+        the output file by SPEED-UP-FACTOR, scaling the times of the MIDI
+        events accordingly.
+        """,
+            """\
+        Prometheus has a limit on the number of datapoints it will return for a
+        query: you will hit this for larger ranges.  Specifying a higher
+        PROMETHEUS-STEP will reduce the number of datapoints Prometheus
+        generates, avoiding this issue.  For large SPEED-UP-FACTORs, you may
+        find that MIDI events are generated too close together, resulting in
+        noisy/bouncy MIDI output: specifying a higher PROMETHEUS-STEP will
+        increase the time between MIDI events in the output.
+        """,
+        ]
+    ]
+    description = "\n\n".join(description_parts)
+    parser = argparse.ArgumentParser(
+        description=description, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
 
     def parse_range(value: str) -> (int, int):
         range_parts = value.split(":")
@@ -382,6 +409,7 @@ def parse_generate_args():
             "The factor by which MIDI events should be sped up relative to real-time:"
             " defaults to 1 (i.e. a 60s range will generate a 60s MIDI file)."
         ),
+        metavar="SPEED-UP-FACTOR",
     )
     parser.add_argument(
         "--prometheus-step",
@@ -393,6 +421,7 @@ def parse_generate_args():
             " speed-up factors), or if your queries are requesting too many datapoints."
             "  Defaults to 1."
         ),
+        metavar="PROMETHEUS-STEP",
     )
     CommonArgs.lead_sheet(parser)
     CommonArgs.prometheus_host(parser)
