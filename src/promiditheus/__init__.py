@@ -258,10 +258,31 @@ def instantiate_config(args: argparse.Namespace) -> confuse.Configuration:
 
 def parse_live_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--midi-output")
+    parser.add_argument(
+        "--midi-output",
+        help=(
+            "The MIDI output to connect to: this should be in the format "
+            "'<client>:<port>', as emitted by `aconnect --list`.  If not given, a"
+            " virtual MIDI port will be published, which can then be connected to other"
+            " MIDI ports using `aconnect`."
+        ),
+    )
     parser.add_argument("--config-file", default="config.yml")
-    parser.add_argument("--replacement", action="append", default=[])
-    parser.add_argument("prometheus_host", metavar="PROMETHEUS-HOST")
+    parser.add_argument(
+        "--replacement",
+        action="append",
+        default=[],
+        help=(
+            "Specify key=value replacements for $variables in queries: e.g."
+            " 'instance=my-host:9100' will replace '$instance' with 'my-host:9100'. Can"
+            " be passed multiple times."
+        ),
+    )
+    parser.add_argument(
+        "prometheus_host",
+        metavar="PROMETHEUS-HOST",
+        help="The Prometheus host to query.",
+    )
     return parser.parse_args()
 
 
