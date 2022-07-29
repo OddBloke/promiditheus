@@ -175,7 +175,7 @@ class GenerateQueryPlayer(QueryPlayer):
         result = self._do_query(query)
 
         track = mido.MidiTrack()
-        track.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(120)))
+        track.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(60)))
         track.append(self._program_change_message())
 
         def scale_delta(delta: int) -> int:
