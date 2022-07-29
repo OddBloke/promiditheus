@@ -276,6 +276,19 @@ class CommonArgs:
             help="The Prometheus host to query.",
         )
 
+    @staticmethod
+    def replacement(parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "--replacement",
+            action="append",
+            default=[],
+            help=(
+                "Specify key=value replacements for $variables in queries: e.g."
+                " 'instance=my-host:9100' will replace '$instance' with 'my-host:9100'."
+                " Can be passed multiple times."
+            ),
+        )
+
 
 def parse_live_args():
     parser = argparse.ArgumentParser()
@@ -288,16 +301,7 @@ def parse_live_args():
             " MIDI ports using, e.g., `aconnect`."
         ),
     )
-    parser.add_argument(
-        "--replacement",
-        action="append",
-        default=[],
-        help=(
-            "Specify key=value replacements for $variables in queries: e.g."
-            " 'instance=my-host:9100' will replace '$instance' with 'my-host:9100'. Can"
-            " be passed multiple times."
-        ),
-    )
+    CommonArgs.replacement(parser)
     CommonArgs.lead_sheet(parser)
     CommonArgs.prometheus_host(parser)
     return parser.parse_args()
@@ -335,7 +339,7 @@ def live_main():
 
 def parse_generate_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--replacement", action="append", default=[])
+    CommonArgs.replacement(parser)
     parser.add_argument("--start", type=int, required=True)
     parser.add_argument("--end", type=int, required=True)
     parser.add_argument("--speed-up-factor", type=int, default=1)
