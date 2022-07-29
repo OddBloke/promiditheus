@@ -104,6 +104,9 @@ queries:
     instrument: contrabass
 ```
 
+All queries must return a value between 0 and 1: this is used to index into the available notes for
+a given instrument.  Any values outside of that range will be discarded.
+
 The MIDI events generated for each query will be emitted on separate channels, based on the order
 in which they are defined in the lead sheet.  (In this example, `cpu` events will be emitted on
 channel 0 and `ram` events on channel 1.)  When `promiditheus-generate` is used, they will each be
