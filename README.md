@@ -106,7 +106,8 @@ queries:
 
 The MIDI events generated for each query will be emitted on separate channels, based on the order
 in which they are defined in the lead sheet.  (In this example, `cpu` events will be emitted on
-channel 0 and `ram` events on channel 1.)
+channel 0 and `ram` events on channel 1.)  When `promiditheus-generate` is used, they will each be
+written as separate tracks.
 
 ### Instruments
 
@@ -171,3 +172,26 @@ This example will select notes from D Minor instead of C Major.  `class` can spe
 any of [the `music21.scale`
 classes](https://web.mit.edu/music21/doc/moduleReference/moduleScale.html#), which will be invoked
 with `tonic` as its argument.
+
+## Creating MIDI Files
+
+`prometheus-generate` is the command used to generate MIDI files from a lead sheet and a time
+range.
+
+If you execute this command after following the Quickstart instructions, a MIDI file containing a
+cello playing the last three minutes of CPU usage will be generated in `output.mid`:
+
+```sh
+promiditheus-generate \
+    --replacement instance=<scraped instance name> \
+    --midi-output <fluidsynth port> \
+    lead-sheet.yml \
+    <prometheus-host> \
+    output.mid
+```
+
+You can play that generated file using FluidSynth:
+
+```sh
+fluidsynth -a alsa output.mid
+```
