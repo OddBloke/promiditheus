@@ -205,7 +205,9 @@ def get_players_from_config(
         replacement.split("=", 1) for replacement in config["cli"]["replacement"].get()
     ]
     players = []
-    for channel, (name, player_config) in enumerate(config["queries"].get().items()):
+    for channel, (name, player_config) in enumerate(
+        config["queries"].get(dict).items()
+    ):
         if port is not None:
             partial_cls = partial(LiveQueryPlayer, port, name)
         else:
