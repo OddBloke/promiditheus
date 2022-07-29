@@ -195,3 +195,8 @@ You can play that generated file using FluidSynth:
 ```sh
 fluidsynth -a alsa output.mid
 ```
+
+## Credits
+
+Thanks to my employer, DigitalOcean, for letting me spend hack-week time on this ultimately
+somewhat-silly project.
