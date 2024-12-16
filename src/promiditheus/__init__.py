@@ -77,7 +77,11 @@ class QueryPlayer:
     def _do_query(self, url: str) -> Any:
         json = requests.get(url, verify=False).json()
         self._log.debug("Prometheus JSON: %s", json)
-        result = json["data"]["result"]
+        try:
+            result = json["data"]["result"]
+        except KeyError:
+            self._log.critical("Prometheus returned no data; got: %s", json)
+            raise
         if len(result) > 1:
             self._log.warning("More than 1 result in Prometheus JSON (%d)", len(result))
         return result
